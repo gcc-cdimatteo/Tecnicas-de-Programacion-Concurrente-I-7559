@@ -48,6 +48,11 @@ fn process_file(filename: String) -> HashMap<String, i64> {
     let mut rdr = Reader::from_path(filename).unwrap();
     let mut data: HashMap<String, i64> = HashMap::new();
     for result in rdr.records() {
+        if result.is_err() {
+            // ignore
+            continue;
+        }
+
         let record = result.unwrap();
         let channel_title = record.get(3).expect("error").to_string();
         let channel_view = record.get(7).expect("error").parse::<i64>().expect("err");

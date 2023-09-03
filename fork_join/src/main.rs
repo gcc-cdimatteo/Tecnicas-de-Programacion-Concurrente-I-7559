@@ -19,19 +19,22 @@ fn main() {
     let seq_end = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
     println!("Sequence time of execution {:?}", seq_end - seq_start);
 
-    let mut equal = true;
-
     for (k, v) in con_data.iter() {
         if !seq_data.contains_key(k) {
-            equal = false;
+            println!("Concurrent Data does not equals to Sequence one. Game Over :|");
             break;
         }
         let seq_val = seq_data.get_key_value(k).unwrap().1;
         if seq_val != v {
-            equal = false;
+            println!("Concurrent Data does not equals to Sequence one. Game Over :|");
             break;
         }
     }
 
-    println!("{:?}", equal);
+    println!("Both Processed Data are Equal! Congrats!");
+
+    println!(
+        "Concurrent process is {:?}% faster :)",
+        ((seq_end - seq_start).as_millis() / (con_end - con_start).as_millis()) * 100
+    )
 }
