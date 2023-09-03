@@ -4,5 +4,5 @@ Repositorio de material para Técnicas de Programación Concurrente I (75.59), 2
 ## Links
 []()
 
-## Agradecimientos
-Repositorio en colaboración con mi mejor compañero, [@franorquera](https://github.com/franorquera) :)
+## Colaboradores
+Mi mejor compañero, [@franorquera](https://github.com/franorquera) :) <3
