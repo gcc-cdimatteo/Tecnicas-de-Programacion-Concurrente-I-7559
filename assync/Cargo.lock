@@ -37,6 +37,8 @@ name = "assync"
 version = "0.1.0"
 dependencies = [
  "rspotify",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 
