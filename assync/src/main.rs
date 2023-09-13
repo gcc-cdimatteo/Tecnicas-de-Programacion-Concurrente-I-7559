@@ -8,9 +8,11 @@ use rspotify::{
 };
 
 async fn get_full_tracks_by_artist(spotify: &ClientCredsSpotify, id: &ArtistId<'_>) -> FullTracks {
+    println!("EMPIEZA PARA: {:?}", id);
     let result = FullTracks {
         tracks: spotify.artist_top_tracks(id.clone(), Some(Market::Country(rspotify::model::Country::Argentina))).await.unwrap()
     };
+    println!("TERMINA PARA: {:?}", id);
     result
 }
 
@@ -41,11 +43,11 @@ async fn async_main() {
         }
     }
 
-    // Por cada artista me quedo con los top tracks
+    // Por cada artista me quedo con los top 10 tracks
     let mut top_tracks: HashMap<ArtistId, FullTracks> = HashMap::new();
 
     for (artist_id, _value) in artists_id.iter() {
-        let full_tracks = get_full_tracks_by_artist(&spotify, &artist_id).await;
+        let full_tracks = get_full_tracks_by_artist(&spotify, &artist_id).await; // ESTO SERIA DE MANERA SECUENCIAL. SIRVE????
         top_tracks.insert(artist_id.clone(), full_tracks);
     }
 }
