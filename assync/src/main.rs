@@ -7,8 +7,14 @@ use rspotify::{
     ClientCredsSpotify, Credentials,
 };
 
-#[tokio::main]
-async fn main() {
+async fn get_full_tracks_by_artist(spotify: &ClientCredsSpotify, id: &ArtistId<'_>) -> FullTracks {
+    let result = FullTracks {
+        tracks: spotify.artist_top_tracks(id.clone(), Some(Market::Country(rspotify::model::Country::Argentina))).await.unwrap()
+    };
+    result
+}
+
+async fn async_main() {
     let creds = Credentials::new(
         "210c4166b7ae423ab7dfcd4362659ff6",
         "f38ab310eee84c0fb1092ef4274a10d6",
@@ -20,6 +26,7 @@ async fn main() {
     let playlist = spotify.playlist(playlist_uri, None, None).await.unwrap();
     let mut artists_id: HashMap<ArtistId, u32> = HashMap::new();
 
+    // Recorro una playlist y me quedo con el id de los artistsas
     for item in playlist.tracks.items.iter() {
         let playable_item = item.clone().track.unwrap();
         match playable_item {
@@ -34,44 +41,15 @@ async fn main() {
         }
     }
 
+    // Por cada artista me quedo con los top tracks
     let mut top_tracks: HashMap<ArtistId, FullTracks> = HashMap::new();
 
-    artists_id.into_iter().for_each(|id| {
-        let full_tracks = task::block_on(get_full_tracks_by_artist(&spotify, &id.0));
-        top_tracks.insert(id.0, full_tracks);
-    });
-
-
-    // let artists_id_copy = artists_id.clone();
-
-    // for (artist_id, _followers) in artists_id_copy.iter() {
-    //     // let artist_uri = ArtistId::from_id(artist_id.to_string());
-    //     let artist = spotify.artist(artist_id.clone()).await.unwrap();
-    //     let follows = artist.followers.total;
-    //     artists_id.insert(artist_id.clone(), follows);
-    //     println!("({:?},{:?})", artist_id,artists_id.get(artist_id));
-    // }
+    for (artist_id, _value) in artists_id.iter() {
+        let full_tracks = get_full_tracks_by_artist(&spotify, &artist_id).await;
+        top_tracks.insert(artist_id.clone(), full_tracks);
+    }
 }
 
-async fn get_full_tracks_by_artist(spotify: &ClientCredsSpotify, id: &ArtistId<'_>) -> FullTracks {
-    let result = FullTracks {
-        tracks: spotify.artist_top_tracks(id.clone(), Some(Market::Country(rspotify::model::Country::Argentina))).await.unwrap()
-    };
-    result
+fn main() {
+    let _response = task::block_on(async_main());
 }
-
-    // let artists_id_c = Arc::new(artists_id);
-
-    // thread::spawn(move || {
-    //     artists_id.into_iter().for_each(|id| {
-    //         let full_tracks = task::block_on(get_full_tracks_by_artist(&spotify, &id.0));
-    //         top_tracks.insert(id.0, full_tracks);
-    //     });
-    // });
-
-    // thread::spawn(move || {
-    //     artists_id.into_iter().for_each(|id| {
-    //         let full_tracks = task::block_on(get_full_tracks_by_artist(&spotify, &id.0));
-    //         top_tracks.insert(id.0, full_tracks);
-    //     });
-    // });
