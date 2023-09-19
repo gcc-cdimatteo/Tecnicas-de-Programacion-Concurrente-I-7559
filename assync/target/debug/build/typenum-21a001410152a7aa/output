@@ -1,3 +1,0 @@
-cargo:rerun-if-changed=build/main.rs
-cargo:rustc-env=TYPENUM_BUILD_CONSTS=/Users/franorquera/Documents/FIUBA/Concurrentes/Tecnicas-de-Programacion-Concurrente-I-7559/assync/target/debug/build/typenum-21a001410152a7aa/out/consts.rs
-cargo:rustc-env=TYPENUM_BUILD_OP=/Users/franorquera/Documents/FIUBA/Concurrentes/Tecnicas-de-Programacion-Concurrente-I-7559/assync/target/debug/build/typenum-21a001410152a7aa/out/op.rs
