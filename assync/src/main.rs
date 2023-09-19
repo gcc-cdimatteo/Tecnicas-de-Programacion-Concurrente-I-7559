@@ -1,19 +1,26 @@
-use std::collections::HashMap;
 use async_std::task;
+use futures::future::join_all;
+use std::collections::HashMap;
 
 use rspotify::{
-    model::{PlaylistId, PlayableItem, ArtistId, FullTracks, Market},
+    model::{ArtistId, FullTracks, Market, PlayableItem, PlaylistId},
     prelude::BaseClient,
     ClientCredsSpotify, Credentials,
 };
 
 async fn get_full_tracks_by_artist(spotify: &ClientCredsSpotify, id: &ArtistId<'_>) -> FullTracks {
-    println!("EMPIEZA PARA: {:?}", id);
-    let result = FullTracks {
-        tracks: spotify.artist_top_tracks(id.clone(), Some(Market::Country(rspotify::model::Country::Argentina))).await.unwrap()
+    // println!("EMPIEZA PARA: {:?}", id);
+    let full_track = FullTracks {
+        tracks: spotify
+            .artist_top_tracks(
+                id.clone(),
+                Some(Market::Country(rspotify::model::Country::Argentina)),
+            )
+            .await
+            .unwrap(),
     };
-    println!("TERMINA PARA: {:?}", id);
-    result
+    // println!("TERMINA PARA: {:?}", id);
+    full_track
 }
 
 async fn async_main() {
@@ -26,7 +33,7 @@ async fn async_main() {
 
     let playlist_uri = PlaylistId::from_id("1JkjsP4R7jTh6jPVzlsfP7").unwrap();
     let playlist = spotify.playlist(playlist_uri, None, None).await.unwrap();
-    let mut artists_id: HashMap<ArtistId, u32> = HashMap::new();
+    let mut artists_id: HashMap<ArtistId<'_>, u32> = HashMap::new();
 
     // Recorro una playlist y me quedo con el id de los artistsas
     for item in playlist.tracks.items.iter() {
@@ -38,18 +45,40 @@ async fn async_main() {
                 if !artists_id.contains_key(artist_id) {
                     artists_id.insert(artist_id.clone(), 0);
                 }
-            },
-            PlayableItem::Episode(_) =>  (),
+            }
+            PlayableItem::Episode(_) => (),
         }
     }
 
     // Por cada artista me quedo con los top 10 tracks
-    let mut top_tracks: HashMap<ArtistId, FullTracks> = HashMap::new();
+    let mut top_tracks: HashMap<ArtistId<'_>, Vec<String>> = HashMap::new();
 
-    for (artist_id, _value) in artists_id.iter() {
-        let full_tracks = get_full_tracks_by_artist(&spotify, &artist_id).await; // ESTO SERIA DE MANERA SECUENCIAL. SIRVE????
-        top_tracks.insert(artist_id.clone(), full_tracks);
-    }
+    let full_tracks: Vec<_> = artists_id
+        .iter()
+        .map(|id| get_full_tracks_by_artist(&spotify, id.0))
+        .collect();
+
+    // Aca esta la parte async
+    let result = join_all(full_tracks).await;
+
+    result.iter().for_each(|tracks| {
+        top_tracks.insert(
+            tracks
+                .tracks
+                .first()
+                .unwrap()
+                .artists
+                .first()
+                .unwrap()
+                .id
+                .as_ref()
+                .unwrap()
+                .to_owned(),
+            tracks.tracks.iter().map(|t| t.name.to_owned()).collect(),
+        );
+    });
+
+    println!("{:#?}", top_tracks);
 }
 
 fn main() {

@@ -37,6 +37,7 @@ name = "assync"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "futures",
  "rspotify",
  "serde_json",
  "tokio 0.2.25",
