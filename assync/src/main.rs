@@ -1,14 +1,29 @@
-use rspotify::model::*;
-use rspotify::{
-    model::{AlbumId, Country, FullTracks, Market, SearchTracks, SearchType},
-    prelude::BaseClient,
-    scopes, AuthCodeSpotify, ClientCredsSpotify, Credentials, OAuth,
-};
-use serde::de::DeserializeOwned;
-use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+use async_std::task;
+use futures::future::join_all;
+use std::collections::HashMap;
 
-#[tokio::main]
-async fn main() {
+use rspotify::{
+    model::{ArtistId, FullTracks, Market, PlayableItem, PlaylistId},
+    prelude::BaseClient,
+    ClientCredsSpotify, Credentials,
+};
+
+async fn get_full_tracks_by_artist(spotify: &ClientCredsSpotify, id: &ArtistId<'_>) -> FullTracks {
+    // println!("EMPIEZA PARA: {:?}", id);
+    let full_track = FullTracks {
+        tracks: spotify
+            .artist_top_tracks(
+                id.clone(),
+                Some(Market::Country(rspotify::model::Country::Argentina)),
+            )
+            .await
+            .unwrap(),
+    };
+    // println!("TERMINA PARA: {:?}", id);
+    full_track
+}
+
+async fn async_main() {
     let creds = Credentials::new(
         "210c4166b7ae423ab7dfcd4362659ff6",
         "f38ab310eee84c0fb1092ef4274a10d6",
@@ -16,40 +31,56 @@ async fn main() {
     let spotify = ClientCredsSpotify::new(creds);
     spotify.request_token().await.unwrap();
 
-    println!("Looking for Duki tracks...");
-    let result = spotify
-        .search(
-            "duki",
-            SearchType::Track,
-            Some(Market::Country(Country::UnitedStates)),
-            None,
-            Some(10),
-            None,
-        )
-        .await;
+    let playlist_uri = PlaylistId::from_id("1JkjsP4R7jTh6jPVzlsfP7").unwrap();
+    let playlist = spotify.playlist(playlist_uri, None, None).await.unwrap();
+    let mut artists_id: HashMap<ArtistId<'_>, u32> = HashMap::new();
 
-    let searched_tracks = match result {
-        Ok(album) => {
-            // println!("Searched track: {album:?}");
-            album
+    // Recorro una playlist y me quedo con el id de los artistsas
+    for item in playlist.tracks.items.iter() {
+        let playable_item = item.clone().track.unwrap();
+        match playable_item {
+            PlayableItem::Track(val) => {
+                let full_track_artists = val.artists;
+                let artist_id = full_track_artists.first().unwrap().id.as_ref().unwrap();
+                if !artists_id.contains_key(artist_id) {
+                    artists_id.insert(artist_id.clone(), 0);
+                }
+            }
+            PlayableItem::Episode(_) => (),
         }
-        Err(err) => {
-            // println!("Search error! {err:?}");
-            panic!()
-        }
-    };
-
-    if let SearchResult::Tracks(full_tracks) = searched_tracks {
-        // println!("{:?}", full_tracks);
-        full_tracks
-            .items
-            .into_iter()
-            .for_each(|t| println!("{:?}", t.name));
     }
 
-    // serde_json::de::Deserializer::from_str()
+    // Por cada artista me quedo con los top 10 tracks
+    let mut top_tracks: HashMap<ArtistId<'_>, Vec<String>> = HashMap::new();
 
-    // let birdy_uri = AlbumId::from_uri("spotify:album:0sNOF9WDwhWunNAHPD3Baj").unwrap();
-    // let albums = spotify.album(birdy_uri, None).await;
-    // println!("Response: {albums:#?}");
+    let full_tracks: Vec<_> = artists_id
+        .iter()
+        .map(|id| get_full_tracks_by_artist(&spotify, id.0))
+        .collect();
+
+    // Aca esta la parte async
+    let result = join_all(full_tracks).await;
+
+    result.iter().for_each(|tracks| {
+        top_tracks.insert(
+            tracks
+                .tracks
+                .first()
+                .unwrap()
+                .artists
+                .first()
+                .unwrap()
+                .id
+                .as_ref()
+                .unwrap()
+                .to_owned(),
+            tracks.tracks.iter().map(|t| t.name.to_owned()).collect(),
+        );
+    });
+
+    println!("{:#?}", top_tracks);
+}
+
+fn main() {
+    let _response = task::block_on(async_main());
 }
