@@ -43,26 +43,52 @@ fn consume_resource(resource: Arc<RwLock<Resource>>) {
 }
 
 fn run_extractions(gold: Arc<RwLock<Gold>>) {
+    let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
-        extract_gold(gold.to_owned());
+        let gold_copy = gold.clone();
+        let handle = thread::spawn(move || extract_gold(gold_copy));
+        handler.push(handle)
+    }
+    for h in handler {
+        h.join().unwrap()
     }
 }
 
 fn run_convert_gold(gold: Arc<RwLock<Gold>>, resource: Arc<RwLock<Resource>>) {
+    let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
-        convert_gold(gold.to_owned(), resource.to_owned());
+        let gold_copy = gold.clone();
+        let resource_copy = resource.clone();
+        let handle = thread::spawn(move || convert_gold(gold_copy, resource_copy));
+        handler.push(handle)
+    }
+    for h in handler {
+        h.join().unwrap()
     }
 }
 
 fn run_convert_resource(resource: Arc<RwLock<Resource>>, gold: Arc<RwLock<Gold>>) {
+    let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
-        convert_resource(resource.to_owned(), gold.to_owned());
+        let gold_copy = gold.clone();
+        let resource_copy = resource.clone();
+        let handle = thread::spawn(move || convert_resource(resource_copy, gold_copy));
+        handler.push(handle)
+    }
+    for h in handler {
+        h.join().unwrap()
     }
 }
 
 fn run_consume_resource(resource: Arc<RwLock<Resource>>) {
+    let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
-        consume_resource(resource.to_owned());
+        let resource_copy = resource.clone();
+        let handle = thread::spawn(move || consume_resource(resource_copy));
+        handler.push(handle);
+    }
+    for h in handler {
+        h.join().unwrap()
     }
 }
 
