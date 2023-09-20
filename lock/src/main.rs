@@ -13,7 +13,7 @@ use std::{
 
 const RANGE_START: i32 = 0;
 const RANGE_END: i32 = 10;
-const MAX_DURATION: Duration = Duration::new(5, 0);
+const MAX_DURATION: Duration = Duration::new(20, 0);
 
 struct Gold {
     amount: Mutex<i64>,
@@ -39,11 +39,12 @@ fn convert_gold(gold: Arc<Gold>, resource: Arc<Resource>) {
 
     while SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - start < MAX_DURATION {
         {
-            let mut gold_amount = *gold.amount.lock().unwrap();
+            let mut gold_amount = gold.amount.lock().unwrap();
+            let mut resource_amount = resource.amount.lock().unwrap();
 
-            if gold_amount >= 4 {
-                gold_amount -= 4;
-                *resource.amount.lock().unwrap() += 1;
+            if *gold_amount >= 4 {
+                *gold_amount -= 4;
+                *resource_amount += 1;
             }
         }
     }
@@ -55,11 +56,12 @@ fn convert_resource(resource: Arc<Resource>, gold: Arc<Gold>) {
 
     while SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - start < MAX_DURATION {
         {
-            let mut resource_amount = *resource.amount.lock().unwrap();
+            let mut gold_amount = gold.amount.lock().unwrap();
+            let mut resource_amount = resource.amount.lock().unwrap();
 
-            if resource_amount >= 2 {
-                resource_amount -= 2;
-                *gold.amount.lock().unwrap() += 1;
+            if *resource_amount >= 2 {
+                *resource_amount -= 2;
+                *gold_amount += 1;
             }
         }
     }
@@ -70,9 +72,10 @@ fn consume_resource(resource: Arc<Resource>) {
 
     while SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - start < MAX_DURATION {
         {
-            let mut resource_amount = *resource.amount.lock().unwrap();
-            if resource_amount >= 1 {
-                resource_amount -= 1;
+            let mut resource_amount = resource.amount.lock().unwrap();
+
+            if *resource_amount >= 1 {
+                *resource_amount -= 1;
             }
         }
     }
@@ -132,8 +135,10 @@ fn print_gold(gold: Arc<Gold>) {
     let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
     while SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - start < 2 * MAX_DURATION {
-        println!("PRINT GOLD: {}", *gold.amount.lock().unwrap());
-        sleep(time::Duration::from_secs(1));
+        {
+            println!("PRINT GOLD: {}", *gold.amount.lock().unwrap());
+        }
+        sleep(time::Duration::from_millis(100));
     }
 }
 
@@ -141,8 +146,10 @@ fn print_resource(resource: Arc<Resource>) {
     let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
     while SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - start < 2 * MAX_DURATION {
-        println!("PRINT RESOURCES: {}", *resource.amount.lock().unwrap());
-        sleep(time::Duration::from_secs(1));
+        {
+            println!("PRINT RESOURCES: {}", *resource.amount.lock().unwrap());
+        }
+        sleep(time::Duration::from_millis(100));
     }
 }
 
