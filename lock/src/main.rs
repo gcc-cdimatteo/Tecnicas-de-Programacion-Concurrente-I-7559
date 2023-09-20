@@ -11,17 +11,17 @@ use std::{
 };
 
 const RANGE_START: i32 = 0;
-const RANGE_END: i32 = 30;
+const RANGE_END: i32 = 10;
 
 struct Gold {
-    amount: i64,
+    amount: RwLock<i64>,
 }
 
 struct Resource {
-    amount: i64,
+    amount: RwLock<i64>,
 }
 
-fn extract_gold(gold: Arc<RwLock<Gold>>) {
+fn extract_gold(gold: Arc<Gold>) {
     // let start;
 
     // while end-start < 15: extrae oro;
@@ -30,19 +30,19 @@ fn extract_gold(gold: Arc<RwLock<Gold>>) {
     println!("EXTRACT GOLD");
 }
 
-fn convert_gold(gold: Arc<RwLock<Gold>>, resource: Arc<RwLock<Resource>>) {
+fn convert_gold(gold: Arc<Gold>, resource: Arc<Resource>) {
     println!("CONVERT GOLD");
 }
 
-fn convert_resource(resource: Arc<RwLock<Resource>>, gold: Arc<RwLock<Gold>>) {
+fn convert_resource(resource: Arc<Resource>, gold: Arc<Gold>) {
     println!("CONVERT RESOURCE");
 }
 
-fn consume_resource(resource: Arc<RwLock<Resource>>) {
+fn consume_resource(resource: Arc<Resource>) {
     println!("CONSUME RESOURCE");
 }
 
-fn run_extractions(gold: Arc<RwLock<Gold>>) {
+fn run_extract_gold(gold: Arc<Gold>) {
     let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
         let gold_copy = gold.clone();
@@ -54,7 +54,7 @@ fn run_extractions(gold: Arc<RwLock<Gold>>) {
     }
 }
 
-fn run_convert_gold(gold: Arc<RwLock<Gold>>, resource: Arc<RwLock<Resource>>) {
+fn run_convert_gold(gold: Arc<Gold>, resource: Arc<Resource>) {
     let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
         let gold_copy = gold.clone();
@@ -67,7 +67,7 @@ fn run_convert_gold(gold: Arc<RwLock<Gold>>, resource: Arc<RwLock<Resource>>) {
     }
 }
 
-fn run_convert_resource(resource: Arc<RwLock<Resource>>, gold: Arc<RwLock<Gold>>) {
+fn run_convert_resource(resource: Arc<Resource>, gold: Arc<Gold>) {
     let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
         let gold_copy = gold.clone();
@@ -80,7 +80,7 @@ fn run_convert_resource(resource: Arc<RwLock<Resource>>, gold: Arc<RwLock<Gold>>
     }
 }
 
-fn run_consume_resource(resource: Arc<RwLock<Resource>>) {
+fn run_consume_resource(resource: Arc<Resource>) {
     let mut handler = vec![];
     for _ in RANGE_START..RANGE_END {
         let resource_copy = resource.clone();
@@ -92,28 +92,32 @@ fn run_consume_resource(resource: Arc<RwLock<Resource>>) {
     }
 }
 
-fn print_gold(gold: Arc<RwLock<Gold>>) {
+fn print_gold(gold: Arc<Gold>) {
     while true {
-        println!("PRINT GOLD");
+        println!("PRINT GOLD: {}", gold.amount.read().unwrap());
         sleep(time::Duration::from_secs(2));
     }
 }
 
-fn print_resource(resource: Arc<RwLock<Resource>>) {
+fn print_resource(resource: Arc<Resource>) {
     while true {
-        println!("PRINT RESOURCE");
+        println!("PRINT RESOURCE: {}", resource.amount.read().unwrap());
         sleep(time::Duration::from_secs(2));
     }
 }
 
 fn main() {
-    let gold = Arc::new(RwLock::new(Gold { amount: 0 }));
-    let resource = Arc::new(RwLock::new(Resource { amount: 0 }));
+    let gold = Arc::new(Gold {
+        amount: RwLock::new(0),
+    });
+    let resource = Arc::new(Resource {
+        amount: RwLock::new(0),
+    });
 
     let mut handler = vec![];
 
     let gold_clone = gold.clone();
-    let t = thread::spawn(move || run_extractions(gold_clone));
+    let t = thread::spawn(move || run_extract_gold(gold_clone));
     handler.push(t);
 
     let gold_clone = gold.clone();
