@@ -59,29 +59,16 @@ fn main() {
 
     let mut handler: Vec<thread::JoinHandle<_>> = vec![];
 
-    let coffee_time = Arc::new((Mutex::new(true), Condvar::new()));
+    let coffee_time = Arc::new(Mutex::new(true));
 
     let barrier = Arc::new(Barrier::new(5));
 
     let mut cafetera_fran = cafetera.clone();
     let coffee_time_fran = coffee_time.clone();
     let fran = thread::spawn(move || {
-        let hago_cafe = Arc::new(Mutex::new(true));
-
-        let hago_cafe_clone = hago_cafe.clone();
-        let t = thread::spawn(move || {
-            let (lock, cvar) = &*coffee_time_fran;
-            let _guard = cvar
-                .wait_while(lock.lock().unwrap(), |tomando_cafe| *tomando_cafe)
-                .unwrap();
-            *hago_cafe_clone.lock().unwrap() = false;
-        });
-
-        while *hago_cafe.lock().unwrap() {
+        while *coffee_time_fran.lock().unwrap() {
             cafetera_fran.hacer_cafe();
         }
-
-        t.join().unwrap();
 
         println!("Fran terminó de hacer café");
     });
@@ -106,9 +93,9 @@ fn main() {
                 // Last one drinks two coffees to free Fran
                 cafetera_family.servir_cafe(i);
 
-                let (lock, cvar) = &*coffee_time_family;
-                *lock.lock().unwrap() = false;
-                cvar.notify_all();
+                {
+                    *coffee_time_family.lock().unwrap() = false;
+                }
             }
         });
         handler.push(integrante_familiar);
